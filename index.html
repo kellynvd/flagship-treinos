@@ -381,6 +381,21 @@ function toast(msg){
   const t=$('#toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1900);
 }
+async function shareDay(pid,w,d){
+  const p=P_BY_ID[pid];
+  const url=location.href;                       // link absoluto já inclui a rota do dia (#/.../w/d)
+  const title=p.name+' — Semana '+w+' · '+WD[d-1];
+  if (navigator.share){
+    try{ await navigator.share({title, url}); return; }
+    catch(err){ if(err && err.name==='AbortError') return; /* segue pro fallback */ }
+  }
+  try{
+    await navigator.clipboard.writeText(url);
+    toast('Link copiado');
+  }catch(err){
+    window.prompt('Copie o link deste treino:', url);
+  }
+}
 
 /* Contagem de blocos e concluídos de um dia (todos os blocos têm checkbox) */
 function dayBlockStats(pid, wk, day){
@@ -571,6 +586,12 @@ function renderDay(pid, w, d){
   const dateInput = el('input',{type:'date', value: prog.date||''});
   dateInput.addEventListener('change', e=>{ prog.date = e.target.value||null; save(); });
   controls.append(el('div',{class:'datefield'},[ el('label',{text:'Data'}), dateInput ]));
+  // compartilhar link deste treino
+  const shareBtn = el('button',{class:'iconbtn share', title:'Compartilhar link deste treino', 'aria-label':'Compartilhar link deste treino', onclick:()=>shareDay(pid,w,d)},[
+    el('span',{html:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>'}),
+    document.createTextNode('Compartilhar')
+  ]);
+  controls.append(shareBtn);
   // botão concluir
   const doneBtn = el('button',{class:'btn-done'+(prog.done?' is-done':'')});
   function paintDone(){
